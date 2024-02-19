@@ -69,5 +69,10 @@ int LoginDialog::userType() {
     }
 }
 
+void LoginDialog::closeEvent(QCloseEvent* event) {
+    QDialog::closeEvent(event);
+    QApplication::quit(); // 退出应用程序
+}
+
 LoginDialog::~LoginDialog() {
 }

@@ -3,7 +3,25 @@
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent) {
     this->resize(800, 600);
+    initDB();
     setToolBar();
+}
+
+void MainWindow::initDB() {
+    sqlite = QSqlDatabase::addDatabase("QSQLITE");
+
+    sqlite.setDatabaseName("E:\\LifeCodeProj\\240214_LibarySeat\\LibarySeat\\database\\libraryseat.db");
+
+    if (this->sqlite.open()) {
+        qDebug() << "Database connected";
+    } else {
+        qDebug() << "Connect failed" << this->sqlite.lastError();
+        // QMessageBox msgBox;
+        // msgBox.setText("数据库连接失败");
+        // msgBox.setDetailedText(DB.lastError().text());
+        // msgBox.exec();
+    }
+    sqlite.close();
 }
 
 void MainWindow::setToolBar() {
@@ -32,7 +50,9 @@ void MainWindow::setStudentUI() {
 }
 
 void MainWindow::bookView() {
-    QTableWidget* tableWidget = new QTableWidget(50, 5, this);
+    QVector<QPushButton*> pushButtonVector;
+
+    QTableWidget* tableWidget = new QTableWidget(0, 5, this);
     QStringList tableHeaders { "座位ID", "楼层", "区域", "是否可用", "预约" };
     tableWidget->setHorizontalHeaderLabels(tableHeaders);
 
@@ -41,6 +61,23 @@ void MainWindow::bookView() {
 
     QPushButton* btn = new QPushButton("book", this);
     tableWidget->setCellWidget(0, 4, btn);
+
+    QSqlQuery sqlQue(this->sqlite);
+
+    sqlite.open();
+    sqlQue.exec("SELECT * FROM Seat;");
+    for (int i = 0; sqlQue.next(); i++) {
+        tableWidget->insertRow(i);
+        tableWidget->setItem(i, 0, new QTableWidgetItem(sqlQue.value("seat_id").toString()));
+        tableWidget->setItem(i, 1, new QTableWidgetItem(sqlQue.value("floor").toString()));
+        tableWidget->setItem(i, 2, new QTableWidgetItem(sqlQue.value("area").toString()));
+        tableWidget->setItem(i, 3, new QTableWidgetItem(sqlQue.value("availability").toString()));
+
+        QPushButton* newBtn = new QPushButton("book", this);
+
+        pushButtonVector.push_back(newBtn);
+        tableWidget->setCellWidget(i, 4, pushButtonVector[i]);
+    }
 
     this->setCentralWidget(tableWidget);
 }
@@ -56,7 +93,7 @@ void MainWindow::bookingRecordView() {
     this->setCentralWidget(tableWidget);
 }
 
-void MainWindow::manageSeatView(){
+void MainWindow::manageSeatView() {
     QTableWidget* tableWidget = new QTableWidget(50, 4, this);
     QStringList tableHeaders { "座位ID", "楼层", "区域", "是否可用" };
     tableWidget->setHorizontalHeaderLabels(tableHeaders);
@@ -67,4 +104,7 @@ void MainWindow::manageSeatView(){
     this->setCentralWidget(tableWidget);
 }
 
-MainWindow::~MainWindow() { }
+MainWindow::~MainWindow() {
+    sqlite.close();
+    // delete this->sqlite;
+}

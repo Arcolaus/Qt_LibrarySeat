@@ -1,11 +1,15 @@
 #include "logindialog.h"
 #include "mainwindow.h"
 #include <QApplication>
+#include <QObject>
+#include <QTimer>
 
 int main(int argc, char* argv[]) {
     QApplication a(argc, argv);
     MainWindow w;
     LoginDialog loginDialog;
+
+    QObject::connect(&loginDialog, &LoginDialog::loginExit, &QApplication::quit);
 
     if (loginDialog.exec() == QDialog::Accepted) {
         if (loginDialog.userType() == 0)
@@ -14,8 +18,7 @@ int main(int argc, char* argv[]) {
             w.setStudentUI();
         w.show();
     } else {
-        w.close();
+        QTimer::singleShot(1000, qApp, SLOT(quit()));
     }
-
     return a.exec();
 }

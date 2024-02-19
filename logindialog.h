@@ -8,6 +8,7 @@
 #include <QPushButton>
 #include <QGridLayout>
 #include <QRadioButton>
+#include <QApplication>
 
 class LoginDialog : public QDialog {
     Q_OBJECT
@@ -15,6 +16,8 @@ public:
     LoginDialog(QWidget* parent = nullptr);
     int userType();
     ~LoginDialog();
+protected:
+    void closeEvent(QCloseEvent *event) override;
 
 private:
     QGridLayout* gridLayout ;
@@ -35,6 +38,8 @@ private:
 
 public slots:
     void loginCheck();
+signals:
+    void loginExit();
 
 };
 
