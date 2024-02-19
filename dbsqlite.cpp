@@ -7,6 +7,13 @@ DBsqlite::DBsqlite(QObject* parent)
 
     if (DB.open()) {
 
+        /*
+        QSqlQuery q;
+        q.exec("SELECT * FROM loginusers");
+        while(q.next()){
+            qDebug()<<q.value("name").toString();
+        }
+        */
     } else {
         QMessageBox msgBox;
         msgBox.setText("数据库连接失败");
@@ -15,8 +22,8 @@ DBsqlite::DBsqlite(QObject* parent)
     }
 }
 
-DBsqlite::addRecord() {
-
+bool DBsqlite::sqlExec(QString sql) {
+    return que.exec(sql);
 }
 
 DBsqlite::~DBsqlite() {

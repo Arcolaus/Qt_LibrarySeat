@@ -1,26 +1,28 @@
 #ifndef DBSQLITE_H
 #define DBSQLITE_H
 
-#include <QObject>
-#include <QSqlDatabase>
-#include <QSqlQuery>
-#include <QSqlError>
-#include <QSqlRecord>
 #include <QDebug>
 #include <QMessageBox>
+#include <QObject>
+#include <QSqlDatabase>
+#include <QSqlError>
+#include <QSqlQuery>
+#include <QSqlRecord>
 
 class DBsqlite : public QObject {
     Q_OBJECT
 public:
     explicit DBsqlite(QObject* parent = nullptr);
     ~DBsqlite();
+
     void showAllSeats();
 
-    void addBooking();
+    bool sqlExec(QString sql);
 
 private:
     QString queryString;
     QSqlDatabase DB;
+    QSqlQuery que;
 signals:
 };
 
