@@ -3,6 +3,9 @@
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent) {
     this->resize(800, 600);
+
+    signalMapper = new QSignalMapper(this);
+
     initDB();
     setToolBar();
 }
@@ -71,15 +74,32 @@ void MainWindow::bookView() {
         tableWidget->setItem(i, 0, new QTableWidgetItem(sqlQue.value("seat_id").toString()));
         tableWidget->setItem(i, 1, new QTableWidgetItem(sqlQue.value("floor").toString()));
         tableWidget->setItem(i, 2, new QTableWidgetItem(sqlQue.value("area").toString()));
-        tableWidget->setItem(i, 3, new QTableWidgetItem(sqlQue.value("availability").toString()));
 
-        QPushButton* newBtn = new QPushButton("book", this);
+        if (sqlQue.value("availability").toInt() == 1) {
+            qDebug()<<"Yes";
 
-        pushButtonVector.push_back(newBtn);
-        tableWidget->setCellWidget(i, 4, pushButtonVector[i]);
+            tableWidget->setItem(i, 3, new QTableWidgetItem("可用"));
+            tableWidget->item(i, 3)->setBackground(QColor(Qt::green));
+            QPushButton* newBtn = new QPushButton("book", this);
+
+            pushButtonVector.push_back(newBtn);
+            tableWidget->setCellWidget(i, 4, pushButtonVector[i]);
+
+            connect(newBtn, &QPushButton::clicked, signalMapper, qOverload<>(&QSignalMapper::map));
+            signalMapper->setMapping(newBtn, sqlQue.value("seat_id").toString());
+        } else {
+            tableWidget->setItem(i, 3, new QTableWidgetItem("不可用"));
+            tableWidget->item(i, 3)->setBackground(QColor(Qt::red));
+            qDebug()<<"no";
+        }
     }
 
+    connect(signalMapper, &QSignalMapper::mappedString, this, &MainWindow::bookSeat);
     this->setCentralWidget(tableWidget);
+}
+
+void MainWindow::bookSeat(const QString& text) {
+    qDebug() << text;
 }
 
 void MainWindow::bookingRecordView() {

@@ -15,6 +15,7 @@
 #include <QTextEdit>
 #include <QToolBar>
 #include <QVBoxLayout>
+#include <QSignalMapper>
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -40,11 +41,15 @@ private:
 
     QSqlDatabase sqlite;
 
+    QSignalMapper * signalMapper;
+
 public slots:
     void bookView();
 
     void bookingRecordView();
 
     void manageSeatView();
+
+    void bookSeat(const QString &text);
 };
 #endif // MAINWINDOW_H
