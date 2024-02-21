@@ -15,6 +15,7 @@ class LoginDialog : public QDialog {
 public:
     LoginDialog(QWidget* parent = nullptr);
     int userType();
+    QString userName();
     ~LoginDialog();
 protected:
     void closeEvent(QCloseEvent *event) override;

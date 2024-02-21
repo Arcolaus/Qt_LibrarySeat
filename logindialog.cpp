@@ -10,7 +10,7 @@ LoginDialog::LoginDialog(QWidget* parent) {
     initSignalSlots();
 }
 void LoginDialog::loginCheck() {
-    if (username_edit->text().trimmed() == "" && password_edit->text().trimmed() == "") {
+    if (username_edit->text().trimmed() == "test_name" && password_edit->text().trimmed() == "") {
         // if (true) {
         accept();
     } else {
@@ -29,7 +29,7 @@ void LoginDialog::initUI() {
     gridLayout->addWidget(username_label, 1, 1, 1, 1);
     // username_label->setAlignment(Qt::AlignRight);
 
-    username_edit = new QLineEdit(this);
+    username_edit = new QLineEdit("test_name",this);
     gridLayout->addWidget(username_edit, 1, 2, 1, 3);
 
     password_label = new QLabel("密码:", this);
@@ -67,6 +67,10 @@ int LoginDialog::userType() {
         QMessageBox::warning(this, "警告!", "用户名和密码错误!", QMessageBox::Yes);
         return -1;
     }
+}
+
+QString LoginDialog::userName() {
+    return username_edit->text().trimmed();
 }
 
 void LoginDialog::closeEvent(QCloseEvent* event) {
