@@ -11,20 +11,6 @@ MainWindow::MainWindow(QWidget* parent)
 }
 
 void MainWindow::initDB() {
-    sqlite = QSqlDatabase::addDatabase("QSQLITE");
-
-    sqlite.setDatabaseName("E:\\LifeCodeProj\\240214_LibarySeat\\LibarySeat\\database\\libraryseat.db");
-
-    if (this->sqlite.open()) {
-        qDebug() << "Database connected";
-    } else {
-        qDebug() << "Connect failed" << this->sqlite.lastError();
-        // QMessageBox msgBox;
-        // msgBox.setText("数据库连接失败");
-        // msgBox.setDetailedText(DB.lastError().text());
-        // msgBox.exec();
-    }
-    sqlite.close();
 }
 
 void MainWindow::setToolBar() {
@@ -48,8 +34,13 @@ void MainWindow::setAdminUI() {
 
 void MainWindow::setStudentUI() {
     this->stuBook = new QAction("预约", this->toolBar);
+    this->stuCheckMyBooking = new QAction("查看我的预约记录", this->toolBar);
+
     this->toolBar->addAction(this->stuBook);
+    this->toolBar->addAction(this->stuCheckMyBooking);
+
     connect(this->stuBook, &QAction::triggered, this, &MainWindow::bookView);
+    connect(this->stuCheckMyBooking, &QAction::triggered, this, &MainWindow::checkMyBookingView);
 }
 
 void MainWindow::bookView() {
@@ -65,9 +56,22 @@ void MainWindow::bookView() {
     QPushButton* btn = new QPushButton("book", this);
     tableWidget->setCellWidget(0, 4, btn);
 
-    QSqlQuery sqlQue(this->sqlite);
+    QSqlDatabase mysql = QSqlDatabase::addDatabase("QMYSQL");
 
-    sqlite.open();
+    mysql.setHostName("localhost"); // 数据库地址，一般都是本地，填localhost就可以(或者填写127.0.0.1)
+    mysql.setDatabaseName("libraryseat"); // 数据库名，根据你Mysql里面的数据库名称来填写，比如我的Mysql里面有个数据库叫school
+    mysql.setUserName("root"); // 登录用户名，一般是本地用户，填root就可以
+    mysql.setPassword("456949"); // 登录密码，填写你自己Mysql登陆密码
+    mysql.setPort(3306); // 端口，默认是3306
+
+    if (!mysql.open()) { // 数据库打开失败
+        qDebug() << ("警报 " + mysql.lastError().text()); // 显示错误信息
+    } else {
+        qDebug() << ("数据库连接成功");
+    }
+
+    QSqlQuery sqlQue;
+
     sqlQue.exec("SELECT * FROM Seat;");
     for (int i = 0; sqlQue.next(); i++) {
         tableWidget->insertRow(i);
@@ -76,7 +80,7 @@ void MainWindow::bookView() {
         tableWidget->setItem(i, 2, new QTableWidgetItem(sqlQue.value("area").toString()));
 
         if (sqlQue.value("availability").toInt() == 1) {
-            qDebug()<<"Yes";
+            qDebug() << "Yes";
 
             tableWidget->setItem(i, 3, new QTableWidgetItem("可用"));
             tableWidget->item(i, 3)->setBackground(QColor(Qt::green));
@@ -90,12 +94,17 @@ void MainWindow::bookView() {
         } else {
             tableWidget->setItem(i, 3, new QTableWidgetItem("不可用"));
             tableWidget->item(i, 3)->setBackground(QColor(Qt::red));
-            qDebug()<<"no";
+            qDebug() << "no";
         }
     }
 
+    mysql.close();
+
     connect(signalMapper, &QSignalMapper::mappedString, this, &MainWindow::bookSeat);
     this->setCentralWidget(tableWidget);
+}
+
+void MainWindow::checkMyBookingView() {
 }
 
 void MainWindow::bookSeat(const QString& text) {
@@ -104,6 +113,7 @@ void MainWindow::bookSeat(const QString& text) {
 
 void MainWindow::bookingRecordView() {
     QTableWidget* tableWidget = new QTableWidget(50, 7, this);
+
     QStringList tableHeaders { "预定记录编号", "用户ID", "座位ID", "座位楼层", "座位区域", "开始时间", "结束时间" };
     tableWidget->setHorizontalHeaderLabels(tableHeaders);
 
@@ -125,6 +135,5 @@ void MainWindow::manageSeatView() {
 }
 
 MainWindow::~MainWindow() {
-    sqlite.close();
-    // delete this->sqlite;
+    // mysql.close();
 }

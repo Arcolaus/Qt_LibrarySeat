@@ -5,6 +5,7 @@
 #include <QDebug>
 #include <QMainWindow>
 #include <QPushButton>
+#include <QSignalMapper>
 #include <QSqlDatabase>
 #include <QSqlError>
 #include <QSqlQuery>
@@ -15,7 +16,6 @@
 #include <QTextEdit>
 #include <QToolBar>
 #include <QVBoxLayout>
-#include <QSignalMapper>
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -36,20 +36,23 @@ private:
     QToolBar* toolBar;
 
     QAction* stuBook;
+    QAction* stuCheckMyBooking;
+
     QAction* adminBookingRecord;
     QAction* adminManageSeat;
 
-    QSqlDatabase sqlite;
+    QSqlDatabase mysql;
 
-    QSignalMapper * signalMapper;
+    QSignalMapper* signalMapper;
 
 public slots:
+    // 学生功能
     void bookView();
+    void bookSeat(const QString& text);
+    void checkMyBookingView();
 
+    // 管理员功能
     void bookingRecordView();
-
     void manageSeatView();
-
-    void bookSeat(const QString &text);
 };
 #endif // MAINWINDOW_H
