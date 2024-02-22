@@ -50,6 +50,10 @@ private:
 
     QSignalMapper* bookSignalMapper;
     QSignalMapper* cancelBookingSignalMapper;
+    QSignalMapper* deleteSeatSignalMapper;
+    QSignalMapper* modifySeatSignalMapper;
+    QSignalMapper* adminCancelBookingSignalMapper;
+
 
 public slots:
     // 学生功能
@@ -61,5 +65,11 @@ public slots:
     // 管理员功能
     void bookingRecordView();
     void manageSeatView();
+    void adminCancelBooking(const QString& text);
+
+    void adminBookSeat(const QString& text);
+    void addSeat();
+    void deleteSeat(const QString& text);
+    void modifySeat(const QString& text);
 };
 #endif // MAINWINDOW_H
