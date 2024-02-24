@@ -10,14 +10,39 @@ LoginDialog::LoginDialog(QWidget* parent) {
     initSignalSlots();
 }
 void LoginDialog::loginCheck() {
-    if (username_edit->text().trimmed() == "test_name" && password_edit->text().trimmed() == "") {
-        // if (true) {
+    QString inputName = username_edit->text().trimmed();
+    QString inputPasswd = password_edit->text().trimmed();
+
+    QString rightPasswd;
+    QSqlDatabase mysql = QSqlDatabase::addDatabase("QMYSQL");
+
+    mysql.setHostName("localhost");
+    mysql.setDatabaseName("libraryseat");
+    mysql.setUserName("root");
+    mysql.setPassword("456949");
+    mysql.setPort(3306);
+
+    if (!mysql.open()) {
+        qDebug() << ("Alert " + mysql.lastError().text());
+    } else {
+        QSqlQuery que;
+        if (userType() == 1)
+            que.exec(QString("select * from user where user_id='%1';").arg(inputName));
+        else
+            que.exec(QString("select * from user_admin where admin_id='%1';").arg(inputName));
+
+        while (que.next()) {
+            rightPasswd = que.value("password").toString();
+            qDebug()<<rightPasswd;
+        }
+    }
+    mysql.close();
+    QSqlDatabase::removeDatabase("qt_sql_default_connection");
+
+    if (inputPasswd == rightPasswd) {
         accept();
     } else {
         QMessageBox::warning(this, "警告!", "用户名和密码错误!", QMessageBox::Yes);
-        // username_Edit->clear();
-        // password_Edit->clear();
-        // usrLineEdit->setFocus();
     }
 }
 
@@ -29,7 +54,7 @@ void LoginDialog::initUI() {
     gridLayout->addWidget(username_label, 1, 1, 1, 1);
     // username_label->setAlignment(Qt::AlignRight);
 
-    username_edit = new QLineEdit("test_name",this);
+    username_edit = new QLineEdit("", this);
     gridLayout->addWidget(username_edit, 1, 2, 1, 3);
 
     password_label = new QLabel("密码:", this);
@@ -64,7 +89,7 @@ int LoginDialog::userType() {
     else if (student_radio->isChecked())
         return 1;
     else {
-        QMessageBox::warning(this, "警告!", "用户名和密码错误!", QMessageBox::Yes);
+        QMessageBox::warning(this, "警告!", "请选择登录类型!", QMessageBox::Yes);
         return -1;
     }
 }

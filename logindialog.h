@@ -1,14 +1,18 @@
 #ifndef LOGINDIALOG_H
 #define LOGINDIALOG_H
 
+#include <QApplication>
 #include <QDialog>
+#include <QGridLayout>
 #include <QLabel>
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QPushButton>
-#include <QGridLayout>
 #include <QRadioButton>
-#include <QApplication>
+#include <QSqlDatabase>
+#include <QSqlError>
+#include <QSqlQuery>
+#include <QSqlRecord>
 
 class LoginDialog : public QDialog {
     Q_OBJECT
@@ -17,11 +21,12 @@ public:
     int userType();
     QString userName();
     ~LoginDialog();
+
 protected:
-    void closeEvent(QCloseEvent *event) override;
+    void closeEvent(QCloseEvent* event) override;
 
 private:
-    QGridLayout* gridLayout ;
+    QGridLayout* gridLayout;
     QLabel* username_label;
     QLabel* password_label;
 
@@ -41,7 +46,6 @@ public slots:
     void loginCheck();
 signals:
     void loginExit();
-
 };
 
 #endif // LOGINDIALOG_H

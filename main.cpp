@@ -12,7 +12,9 @@ int main(int argc, char* argv[]) {
     QObject::connect(&loginDialog, &LoginDialog::loginExit, &QApplication::quit);
 
     if (loginDialog.exec() == QDialog::Accepted) {
+
         w.setUserName(loginDialog.userName());
+
         if (loginDialog.userType() == 0)
             w.setAdminUI();
         else if (loginDialog.userType() == 1)

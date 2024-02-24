@@ -2,7 +2,7 @@
 
 MainWindow::MainWindow(QWidget* parent)
     : QMainWindow(parent) {
-    this->resize(1600, 900);
+    this->resize(1280, 768);
 
     adminCancelBookingSignalMapper = new QSignalMapper(this);
     bookSignalMapper = new QSignalMapper(this);
@@ -10,11 +10,11 @@ MainWindow::MainWindow(QWidget* parent)
     deleteSeatSignalMapper = new QSignalMapper(this);
     modifySeatSignalMapper = new QSignalMapper(this);
 
-    initDB();
-    setToolBar();
-}
+    deleteUserSignalMapper = new QSignalMapper(this);
+    modifyUserSignalMapper = new QSignalMapper(this);
+    addUserSignalMapper = new QSignalMapper(this);
 
-void MainWindow::initDB() {
+    setToolBar();
 }
 
 void MainWindow::setUserName(QString username) {
@@ -36,6 +36,10 @@ void MainWindow::setAdminUI() {
     this->adminManageSeat = new QAction("管理座位", this);
     this->toolBar->addAction(adminManageSeat);
 
+    this->adminManageUser = new QAction("管理用户", this);
+    this->toolBar->addAction(adminManageUser);
+
+    connect(adminManageUser, &QAction::triggered, this, &MainWindow::manageUsersView);
     connect(this->adminBookingRecord, &QAction::triggered, this, &MainWindow::bookingRecordView);
     connect(this->adminManageSeat, &QAction::triggered, this, &MainWindow::manageSeatView);
 }
@@ -98,7 +102,7 @@ void MainWindow::bookView() {
     }
 
     mysql.close();
-
+    QSqlDatabase::removeDatabase("qt_sql_default_connection");
     connect(bookSignalMapper, &QSignalMapper::mappedString, this, &MainWindow::bookSeat);
     this->setCentralWidget(tableWidget);
 }
@@ -157,6 +161,7 @@ void MainWindow::checkMyBookingView() {
 
     connect(cancelBookingSignalMapper, &QSignalMapper::mappedString, this, &MainWindow::cancelBooking);
     mysql.close();
+    QSqlDatabase::removeDatabase("qt_sql_default_connection");
     this->setCentralWidget(tableWidget);
 }
 
@@ -185,6 +190,7 @@ void MainWindow::bookSeat(const QString& text) {
         }
     }
     mysql.close();
+    QSqlDatabase::removeDatabase("qt_sql_default_connection");
     bookView();
 }
 
@@ -205,6 +211,7 @@ void MainWindow::cancelBooking(const QString& text) {
     }
 
     mysql.close();
+    QSqlDatabase::removeDatabase("qt_sql_default_connection");
     checkMyBookingView();
 }
 
@@ -262,6 +269,9 @@ void MainWindow::bookingRecordView() {
     connect(adminCancelBookingSignalMapper, &QSignalMapper::mappedString, this, &MainWindow::adminCancelBooking);
     tableWidget->resizeColumnsToContents();
     this->setCentralWidget(tableWidget);
+
+    mysql.close();
+    QSqlDatabase::removeDatabase("qt_sql_default_connection");
 }
 
 void MainWindow::adminCancelBooking(const QString& text) {
@@ -281,15 +291,17 @@ void MainWindow::adminCancelBooking(const QString& text) {
     }
 
     mysql.close();
+    QSqlDatabase::removeDatabase("qt_sql_default_connection");
     bookingRecordView();
 }
+
 void MainWindow::manageSeatView() {
     QVector<QPushButton*> bookButtons;
     QVector<QPushButton*> deleteButtons;
     QVector<QPushButton*> modifyButtons;
 
-    QTableWidget* tableWidget = new QTableWidget(50, 7, this);
-    QStringList tableHeaders { "座位ID", "楼层", "区域", "是否可用", "预约", "删除座位", "修改座位信息" };
+    QTableWidget* tableWidget = new QTableWidget(50, 8, this);
+    QStringList tableHeaders { "座位ID", "楼层", "区域", "是否可用", "预约", "删除座位", "修改座位信息", "增加座位" };
     tableWidget->setHorizontalHeaderLabels(tableHeaders);
 
     tableWidget->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
@@ -342,14 +354,15 @@ void MainWindow::manageSeatView() {
             modifySeatSignalMapper->setMapping(modifyButton, sqlQue.value("seat_id").toString());
         }
         QPushButton* addSeatButton = new QPushButton("增加座位", this);
-        tableWidget->setCellWidget(sqlQue.size(), 0, addSeatButton);
+        tableWidget->setCellWidget(sqlQue.size(), 7, addSeatButton);
+        connect(addSeatButton, &QPushButton::clicked, this, &MainWindow::addSeat);
     }
 
     connect(modifySeatSignalMapper, &QSignalMapper::mappedString, this, &MainWindow::modifySeat);
     connect(deleteSeatSignalMapper, &QSignalMapper::mappedString, this, &MainWindow::deleteSeat);
 
     mysql.close();
-
+    QSqlDatabase::removeDatabase("qt_sql_default_connection");
     tableWidget->resizeColumnsToContents();
     this->setCentralWidget(tableWidget);
 }
@@ -379,19 +392,271 @@ void MainWindow::adminBookSeat(const QString& text) {
         }
     }
     mysql.close();
+    QSqlDatabase::removeDatabase("qt_sql_default_connection");
     manageSeatView();
 }
 
 void MainWindow::addSeat() {
+    QDialog dialog;
+    dialog.setWindowTitle("增加座位");
 
-};
+    QFormLayout layout(&dialog);
+
+    QLineEdit* lineEdit1 = new QLineEdit(&dialog);
+    QLineEdit* lineEdit2 = new QLineEdit(&dialog);
+
+    layout.addRow("楼层:", lineEdit1);
+    layout.addRow("区域:", lineEdit2);
+
+    QDialogButtonBox buttonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
+    layout.addRow(&buttonBox);
+
+    QObject::connect(&buttonBox, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+    QObject::connect(&buttonBox, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+
+    if (dialog.exec() == QDialog::Accepted) {
+        QString text1 = lineEdit1->text();
+        QString text2 = lineEdit2->text();
+
+        QSqlDatabase mysql = QSqlDatabase::addDatabase("QMYSQL");
+
+        mysql.setHostName("localhost");
+        mysql.setDatabaseName("libraryseat");
+        mysql.setUserName("root");
+        mysql.setPassword("456949");
+        mysql.setPort(3306);
+
+        if (!mysql.open()) {
+            qDebug() << ("Alert " + mysql.lastError().text());
+        } else {
+            QSqlQuery que;
+            que.exec(QString("insert into seat values(null,'%1','%2',1);").arg(text1, text2));
+        }
+        mysql.close();
+        QSqlDatabase::removeDatabase("qt_sql_default_connection");
+        manageSeatView();
+    }
+}
+
 void MainWindow::deleteSeat(const QString& text) {
-    qDebug() << "deletaSeat " << text;
-};
+    QSqlDatabase mysql = QSqlDatabase::addDatabase("QMYSQL");
+
+    mysql.setHostName("localhost");
+    mysql.setDatabaseName("libraryseat");
+    mysql.setUserName("root");
+    mysql.setPassword("456949");
+    mysql.setPort(3306);
+
+    if (!mysql.open()) {
+        qDebug() << ("Alert " + mysql.lastError().text());
+    } else {
+        QSqlQuery que;
+        que.exec(QString("delete from seat where seat_id=%1;").arg(text));
+    }
+    mysql.close();
+    QSqlDatabase::removeDatabase("qt_sql_default_connection");
+    manageSeatView();
+}
+
 void MainWindow::modifySeat(const QString& text) {
-    qDebug() << "modifySeat " << text;
-};
+    QDialog dialog;
+    dialog.setWindowTitle("修改座位信息");
+
+    QFormLayout layout(&dialog);
+
+    QLineEdit* lineEdit1 = new QLineEdit(&dialog);
+    QLineEdit* lineEdit2 = new QLineEdit(&dialog);
+
+    layout.addRow("楼层:", lineEdit1);
+    layout.addRow("区域:", lineEdit2);
+
+    QDialogButtonBox buttonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
+    layout.addRow(&buttonBox);
+
+    QObject::connect(&buttonBox, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+    QObject::connect(&buttonBox, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+
+    if (dialog.exec() == QDialog::Accepted) {
+        QString text1 = lineEdit1->text();
+        QString text2 = lineEdit2->text();
+
+        QSqlDatabase mysql = QSqlDatabase::addDatabase("QMYSQL");
+
+        mysql.setHostName("localhost");
+        mysql.setDatabaseName("libraryseat");
+        mysql.setUserName("root");
+        mysql.setPassword("456949");
+        mysql.setPort(3306);
+
+        if (!mysql.open()) {
+            qDebug() << ("Alert " + mysql.lastError().text());
+        } else {
+            QSqlQuery que;
+            que.exec(QString("update seat set floor='%2',area='%3' where seat_id=%1;").arg(text, text1, text2));
+        }
+        mysql.close();
+        QSqlDatabase::removeDatabase("qt_sql_default_connection");
+        manageSeatView();
+    }
+}
+
+void MainWindow::manageUsersView() {
+    QVector<QPushButton*> deleteButtons;
+    QVector<QPushButton*> modifyButtons;
+
+    QTableWidget* tableWidget = new QTableWidget(50, 5, this);
+    QStringList tableHeaders { "用户ID", "密码", "删除用户", "修改信息", "增加用户" };
+    tableWidget->setHorizontalHeaderLabels(tableHeaders);
+
+    tableWidget->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+    tableWidget->setEditTriggers(QAbstractItemView::NoEditTriggers);
+
+    QSqlDatabase mysql = QSqlDatabase::addDatabase("QMYSQL");
+
+    mysql.setHostName("localhost");
+    mysql.setDatabaseName("libraryseat");
+    mysql.setUserName("root");
+    mysql.setPassword("456949");
+    mysql.setPort(3306);
+
+    if (!mysql.open()) {
+        qDebug() << ("Alert " + mysql.lastError().text());
+    } else {
+        QSqlQuery sqlQue;
+
+        sqlQue.exec("SELECT * FROM user;");
+        for (int i = 0; sqlQue.next(); i++) {
+            tableWidget->setItem(i, 0, new QTableWidgetItem(sqlQue.value("user_id").toString()));
+            tableWidget->setItem(i, 1, new QTableWidgetItem(sqlQue.value("password").toString()));
+
+            QPushButton* deleteButton = new QPushButton("删除", this);
+            deleteButtons.push_back(deleteButton);
+            tableWidget->setCellWidget(i, 2, deleteButton);
+            connect(deleteButton, &QPushButton::clicked, deleteUserSignalMapper, qOverload<>(&QSignalMapper::map));
+            deleteUserSignalMapper->setMapping(deleteButton, sqlQue.value("user_id").toString());
+
+            QPushButton* modifyButton = new QPushButton("修改密码", this);
+            modifyButtons.push_back(modifyButton);
+            tableWidget->setCellWidget(i, 3, modifyButton);
+            connect(modifyButton, &QPushButton::clicked, modifyUserSignalMapper, qOverload<>(&QSignalMapper::map));
+            modifyUserSignalMapper->setMapping(modifyButton, sqlQue.value("user_id").toString());
+        }
+        QPushButton* addSeatButton = new QPushButton("增加", this);
+        tableWidget->setCellWidget(sqlQue.size(), 4, addSeatButton);
+        connect(addSeatButton, &QPushButton::clicked, this, &MainWindow::addUser);
+    }
+
+    connect(deleteUserSignalMapper, &QSignalMapper::mappedString, this, &MainWindow::deleteUser);
+    connect(modifyUserSignalMapper, &QSignalMapper::mappedString, this, &MainWindow::modifyUser);
+
+    mysql.close();
+    QSqlDatabase::removeDatabase("qt_sql_default_connection");
+    tableWidget->resizeColumnsToContents();
+    this->setCentralWidget(tableWidget);
+}
+
+void MainWindow::addUser() {
+    QDialog dialog;
+    dialog.setWindowTitle("增加用户");
+
+    QFormLayout layout(&dialog);
+
+    QLineEdit* lineEdit1 = new QLineEdit(&dialog);
+    QLineEdit* lineEdit2 = new QLineEdit(&dialog);
+
+    layout.addRow("用户名:", lineEdit1);
+    layout.addRow("密码:", lineEdit2);
+
+    QDialogButtonBox buttonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
+    layout.addRow(&buttonBox);
+
+    QObject::connect(&buttonBox, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+    QObject::connect(&buttonBox, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+
+    if (dialog.exec() == QDialog::Accepted) {
+        QString text1 = lineEdit1->text();
+        QString text2 = lineEdit2->text();
+
+        QSqlDatabase mysql = QSqlDatabase::addDatabase("QMYSQL");
+
+        mysql.setHostName("localhost");
+        mysql.setDatabaseName("libraryseat");
+        mysql.setUserName("root");
+        mysql.setPassword("456949");
+        mysql.setPort(3306);
+
+        if (!mysql.open()) {
+            qDebug() << ("Alert " + mysql.lastError().text());
+        } else {
+            QSqlQuery que;
+            que.exec(QString("insert into user values('%1','%2');").arg(text1, text2));
+        }
+        mysql.close();
+        QSqlDatabase::removeDatabase("qt_sql_default_connection");
+        manageUsersView();
+    }
+}
+
+void MainWindow::deleteUser(const QString& text) {
+    QSqlDatabase mysql = QSqlDatabase::addDatabase("QMYSQL");
+
+    mysql.setHostName("localhost");
+    mysql.setDatabaseName("libraryseat");
+    mysql.setUserName("root");
+    mysql.setPassword("456949");
+    mysql.setPort(3306);
+
+    if (!mysql.open()) {
+        qDebug() << ("Alert " + mysql.lastError().text());
+    } else {
+        QSqlQuery que;
+        qDebug() << QString("delete from user where user_id=%1;").arg(text);
+        que.exec(QString("delete from user where user_id='%1';").arg(text));
+    }
+    mysql.close();
+    QSqlDatabase::removeDatabase("qt_sql_default_connection");
+    manageUsersView();
+}
+
+void MainWindow::modifyUser(const QString& text) {
+    QDialog dialog;
+    dialog.setWindowTitle("修改密码");
+
+    QFormLayout layout(&dialog);
+
+    QLineEdit* lineEdit1 = new QLineEdit(&dialog);
+
+    layout.addRow("新密码:", lineEdit1);
+
+    QDialogButtonBox buttonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
+    layout.addRow(&buttonBox);
+
+    QObject::connect(&buttonBox, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+    QObject::connect(&buttonBox, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+
+    if (dialog.exec() == QDialog::Accepted) {
+        QString text1 = lineEdit1->text();
+
+        QSqlDatabase mysql = QSqlDatabase::addDatabase("QMYSQL");
+
+        mysql.setHostName("localhost");
+        mysql.setDatabaseName("libraryseat");
+        mysql.setUserName("root");
+        mysql.setPassword("456949");
+        mysql.setPort(3306);
+
+        if (!mysql.open()) {
+            qDebug() << ("Alert " + mysql.lastError().text());
+        } else {
+            QSqlQuery que;
+            qDebug()<<QString("update user set password='%2' where user_id='%1';").arg(text, text1);
+            que.exec(QString("update user set password='%2' where user_id='%1';").arg(text, text1));
+        }
+        mysql.close();
+        QSqlDatabase::removeDatabase("qt_sql_default_connection");
+        manageUsersView();
+    }
+}
 
 MainWindow::~MainWindow() {
-    // mysql.close();
 }
