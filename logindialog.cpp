@@ -14,6 +14,8 @@ void LoginDialog::loginCheck() {
     QString inputPasswd = password_edit->text().trimmed();
 
     QString rightPasswd;
+    
+    // 连接数据库
     QSqlDatabase mysql = QSqlDatabase::addDatabase("QMYSQL");
 
     mysql.setHostName("localhost");
@@ -47,6 +49,8 @@ void LoginDialog::loginCheck() {
 }
 
 void LoginDialog::initUI() {
+
+    // 设定界面
     gridLayout->setSpacing(10);
     gridLayout->setContentsMargins(50, 50, 30, 50);
 

@@ -69,13 +69,11 @@ private:
     QSignalMapper* addUserSignalMapper;
 
 public slots:
-    // 学生功能
     void bookView();
     void bookSeat(const QString& text);
     void cancelBooking(const QString& text);
     void checkMyBookingView();
 
-    // 管理员功能
     void bookingRecordView();
     void manageSeatView();
     void adminCancelBooking(const QString& text);
